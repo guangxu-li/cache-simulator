@@ -38,14 +38,13 @@ class cache
 private:
     config cfg;
     unsigned long tag1, index1, offset1, tag2, index2, offset2;
-    // vector<vector<unsigned long>> L1, validBits1, L2, validBits2;
 
 public:
     cache(config cfg)
     {
         this->cfg = cfg;
 
-        // offset1 = (unsigned long)log2(cfg.L1blocksize);
+        offset1 = (unsigned long)log2(cfg.L1blocksize);
         offset2 = (unsigned long)log2(cfg.L2blocksize);
 
         index1 = (unsigned long)(log2(cfg.L1size) + 10 - log2(cfg.L1setsize) - log2(cfg.L1blocksize));
@@ -53,21 +52,6 @@ public:
 
         tag1 = 32 - offset1 - index1;
         tag2 = 32 - offset2 - index2;
-
-        /* 
-         * initialize validBits and cache
-         * m x n -> m sets x n blocks per set
-         */
-
-        // vector<vector<unsigned long>> valid1(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
-        // vector<vector<unsigned long>> valid2(cfg.L2setsize, vector<unsigned long>((unsigned long)pow(2, index2), 0));
-        // vector<vector<unsigned long>> l1(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
-        // vector<vector<unsigned long>> l2(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
-
-        // validBits1 = valid1;
-        // validBits2 = valid2;
-        // L1 = l1;
-        // L2 = l2;
     }
 
     vector<unsigned long> getParameters()
@@ -79,30 +63,22 @@ public:
 
     vector<vector<unsigned long>> getL1()
     {
-        vector<vector<unsigned long>> L1(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
-
-        return L1;
+        return vector<vector<unsigned long>>(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
     }
 
     vector<vector<unsigned long>> getL2()
     {
-        vector<vector<unsigned long>> L2(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
-
-        return L2;
+        return vector<vector<unsigned long>>(cfg.L2setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
     }
 
     vector<vector<bool>> getValidBits1()
     {
-        vector<vector<bool>> valid(cfg.L1setsize, vector<bool>((unsigned long)pow(2, index1), false));
-
-        return valid;
+        return vector<vector<bool>>(cfg.L1setsize, vector<bool>((unsigned long)pow(2, index1), false));
     }
 
     vector<vector<bool>> getValidBits2()
     {
-        vector<vector<bool>> valid(cfg.L2setsize, vector<bool>((unsigned long)pow(2, index2), false));
-
-        return valid;
+        return vector<vector<bool>>(cfg.L2setsize, vector<bool>((unsigned long)pow(2, index2), false));
     }
 };
 
