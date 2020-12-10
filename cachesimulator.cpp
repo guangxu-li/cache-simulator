@@ -56,29 +56,33 @@ public:
 
     vector<unsigned long> getParameters()
     {
-        vector<unsigned long> parameters{tag1, index1, tag2, index2};
+        vector<unsigned long> parameters(4, 0);
+        parameters[0] = tag1;
+        parameters[1] = index1;
+        parameters[2] = tag2;
+        parameters[3] = index2;
 
         return parameters;
     }
 
-    vector<vector<unsigned long>> getL1()
+    vector<vector<unsigned long> > getL1()
     {
-        return vector<vector<unsigned long>>(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
+        return vector<vector<unsigned long> >(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
     }
 
-    vector<vector<unsigned long>> getL2()
+    vector<vector<unsigned long> > getL2()
     {
-        return vector<vector<unsigned long>>(cfg.L2setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
+        return vector<vector<unsigned long> >(cfg.L2setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
     }
 
-    vector<vector<bool>> getValidBits1()
+    vector<vector<bool> > getValidBits1()
     {
-        return vector<vector<bool>>(cfg.L1setsize, vector<bool>((unsigned long)pow(2, index1), false));
+        return vector<vector<bool> >(cfg.L1setsize, vector<bool>((unsigned long)pow(2, index1), false));
     }
 
-    vector<vector<bool>> getValidBits2()
+    vector<vector<bool> > getValidBits2()
     {
-        return vector<vector<bool>>(cfg.L2setsize, vector<bool>((unsigned long)pow(2, index2), false));
+        return vector<vector<bool> >(cfg.L2setsize, vector<bool>((unsigned long)pow(2, index2), false));
     }
 };
 
@@ -110,11 +114,11 @@ int main(int argc, char *argv[])
 
     vector<unsigned long> parameters = c.getParameters();
 
-    vector<vector<unsigned long>> L1 = c.getL1();
-    vector<vector<unsigned long>> L2 = c.getL2();
+    vector<vector<unsigned long> > L1 = c.getL1();
+    vector<vector<unsigned long> > L2 = c.getL2();
 
-    vector<vector<bool>> validBits1 = c.getValidBits1();
-    vector<vector<bool>> validBits2 = c.getValidBits2();
+    vector<vector<bool> > validBits1 = c.getValidBits1();
+    vector<vector<bool> > validBits2 = c.getValidBits2();
 
     int long setsize1 = cacheconfig.L1setsize;
     int long setsize2 = cacheconfig.L2setsize;
@@ -165,8 +169,6 @@ int main(int argc, char *argv[])
             index2 = bitset<32>(accessaddr.to_string().substr(parameters[2], parameters[3])).to_ulong();
 
             bool l1Hits = false, l2Hits = false;
-
-            map<unsigned long, bool> sets;
 
             for (int i = 0; i < setsize1 && !l1Hits; i++)
             {
