@@ -67,12 +67,12 @@ public:
 
     vector<vector<unsigned long> > getL1()
     {
-        return vector<vector<unsigned long> >(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
+        return vector<vector<unsigned long> >(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), -1));
     }
 
     vector<vector<unsigned long> > getL2()
     {
-        return vector<vector<unsigned long> >(cfg.L2setsize, vector<unsigned long>((unsigned long)pow(2, index2), 0));
+        return vector<vector<unsigned long> >(cfg.L2setsize, vector<unsigned long>((unsigned long)pow(2, index2), -1));
     }
 
     vector<vector<bool> > getValidBits1()
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
                         2. L1[index] is not dirty, no more changes */
                     int setIdx1 = counter1[index1];
                     L1[setIdx1][index1] = (unsigned long)tag1;
-                    validBits1[setIdx1][index1] = 1;
+                    validBits1[setIdx1][index1] = true;
 
                     counter1[index1] = (counter1[index1] + 1) % setsize1;
                 }
@@ -242,27 +242,27 @@ int main(int argc, char *argv[])
                     // non inclusive / NINE, place in both L1 and L2 when both miss
                     // place in L2
                     int setIdx2 = counter2[index2];
-                    for (int i = 0; i < setsize2 && L2[setIdx2][index2] != 0; i++)
+                    for (int i = 0; i < setsize2 && L2[setIdx2][index2] != -1; i++)
                     {
                         counter2[index2] = (counter2[index2] + 1) % setsize2;
                         setIdx2 = counter2[index2];
                     }
 
                     L2[setIdx2][index2] = tag2;
-                    validBits2[setIdx2][index2] = 1;
+                    validBits2[setIdx2][index2] = true;
 
                     counter2[index2] = (counter2[index2] + 1) % setsize2;
 
                     // place in L1
                     int setIdx1 = counter1[index1];
-                    for (int i = 0; i < setsize1 && L1[setIdx1][index1] != 0; i++)
+                    for (int i = 0; i < setsize1 && L1[setIdx1][index1] != -1; i++)
                     {
                         counter1[index1] = (counter1[index1] + 1) % setsize1;
                         setIdx1 = counter1[index1];
                     }
 
                     L1[setIdx1][index1] = tag1;
-                    validBits1[setIdx1][index1] = 1;
+                    validBits1[setIdx1][index1] = true;
 
                     counter1[index1] = (counter1[index1] + 1) % setsize1;
                 }
