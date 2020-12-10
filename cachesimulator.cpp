@@ -65,14 +65,14 @@ public:
         return parameters;
     }
 
-    vector<vector<unsigned long> > getL1()
+    vector<vector<long> > getL1()
     {
-        return vector<vector<unsigned long> >(cfg.L1setsize, vector<unsigned long>((unsigned long)pow(2, index1), -1));
+        return vector<vector<long> >(cfg.L1setsize, vector<long>((long)pow(2, index1), -1));
     }
 
-    vector<vector<unsigned long> > getL2()
+    vector<vector<long> > getL2()
     {
-        return vector<vector<unsigned long> >(cfg.L2setsize, vector<unsigned long>((unsigned long)pow(2, index2), -1));
+        return vector<vector<long> >(cfg.L2setsize, vector<long>((long)pow(2, index2), -1));
     }
 
     vector<vector<bool> > getValidBits1()
@@ -122,8 +122,8 @@ int main(int argc, char *argv[])
 
     vector<unsigned long> parameters = c.getParameters();
 
-    vector<vector<unsigned long> > L1 = c.getL1();
-    vector<vector<unsigned long> > L2 = c.getL2();
+    vector<vector<long> > L1 = c.getL1();
+    vector<vector<long> > L2 = c.getL2();
 
     vector<vector<bool> > validBits1 = c.getValidBits1();
     vector<vector<bool> > validBits2 = c.getValidBits2();
