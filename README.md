@@ -15,7 +15,7 @@ Two level cache simulator
 
 # How to use
 
-A `makefile' covering compiling, building and execution has been provided. To use it use following command line: (make sure you are locating in the source file cachesimulator.cpp folder)
+A `makefile' covering compiling, building and execution has been provided. Use following command line to execute: (make sure you are locating in the source file cachesimulator.cpp folder)
 ```bash
 make
 ```
