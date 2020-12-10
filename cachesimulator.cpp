@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
     // initialize the hirearch cache system with those configs
     // probably you may define a Cache class for L1 and L2, or any data structure you like
 
-    // TODO: full associative
+    // full associative
     if (cacheconfig.L1setsize == 0) {
         cacheconfig.L1setsize = cacheconfig.L1size * pow(2, 10) / cacheconfig.L1blocksize;
     }
