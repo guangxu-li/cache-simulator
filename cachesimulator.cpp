@@ -164,8 +164,9 @@ int main(int argc, char *argv[])
             tag2 = bitset<32>(accessaddr.to_string().substr(0, parameters[2])).to_ulong();
             index2 = bitset<32>(accessaddr.to_string().substr(parameters[2], parameters[3])).to_ulong();
 
-            bool l1Hits = false,
-                 l2Hits = false;
+            bool l1Hits = false, l2Hits = false;
+
+            map<unsigned long, bool> sets;
 
             for (int i = 0; i < setsize1 && !l1Hits; i++)
             {
@@ -177,7 +178,7 @@ int main(int argc, char *argv[])
 
             for (int i = 0; i < setsize2 && !l1Hits && !l2Hits; i++)
             {
-                if (L2[i][index2] == tag2)
+                if (L2[i][index2] == tag2 && validBits2[i][index2])
                 {
                     l2Hits = true;
                 }
@@ -200,14 +201,48 @@ int main(int argc, char *argv[])
                     L1AcceState = RM;
                     L2AcceState = RH;
 
-                    // TODO: read miss in L1 and read hit in L2
+                    /* move the data from L2 to L1, update tag in L1
+                        Non inclusive:
+                        1. Even if L1[index] is dirty, discard the evicted data directly
+                        2. L1[index] is not dirty, no more changes */
+
+                    int setIdx1 = counter1[index1];
+                    L1[setIdx1][index1] = (unsigned long)tag1;
+                    validBits1[setIdx1][index1] = 1;
+
+                    counter1[index1] = (counter1[index1] + 1) % setsize1;
                 }
                 else
                 {
                     L1AcceState = RM;
                     L2AcceState = RM;
 
-                    // TODO: read miss in L1 and read miss in L2
+                    // non inclusive, place in both L1 and L2 when both miss
+                    // place in L2
+                    int setIdx2 = counter2[index2];
+                    for (int i = 0; i < setsize2 && L2[setIdx2][index2] != 0; i++)
+                    {
+                        counter2[index2] = (counter2[index2] + 1) % setsize2;
+                        setIdx2 = counter2[index2];
+                    }
+
+                    L2[setIdx2][index2] = tag2;
+                    validBits2[setIdx2][index2] = 1;
+
+                    counter2[index2] = (counter2[index2] + 1) % setsize2;
+
+                    // place in L1
+                    int setIdx1 = counter1[index1];
+                    for (int i = 0; i < setsize1 && L1[setIdx1][index1] != 0; i++)
+                    {
+                        counter1[index1] = (counter1[index1] + 1) % setsize1;
+                        setIdx1 = counter1[index1];
+                    }
+
+                    L1[setIdx1][index1] = tag1;
+                    validBits1[setIdx1][index1] = 1;
+
+                    counter1[index1] = (counter1[index1] + 1) % setsize1;
                 }
             }
             else
@@ -218,6 +253,8 @@ int main(int argc, char *argv[])
                 //update the L1 and L2 access state variable;
                 if (l1Hits)
                 {
+                    // write hit in L1, tag1 remains
+                    // don't care about data
                     L1AcceState = WH;
                     L2AcceState = NA;
                 }
@@ -225,9 +262,13 @@ int main(int argc, char *argv[])
                 {
                     L1AcceState = WM;
                     L2AcceState = WH;
+
+                    // write back trigered in L2
+                    // in this program's view, no nore changes needed.
                 }
                 else
                 {
+                    // no alocate -> forward write to next level
                     L1AcceState = WM;
                     L2AcceState = WM;
                 }
