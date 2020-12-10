@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
         cacheconfig.L2setsize = cacheconfig.L2size * pow(2, 10) / cacheconfig.L2blocksize;
     }
 
+    // setting up cache
     cache c(cacheconfig);
 
     vector<unsigned long> parameters = c.getParameters();
@@ -165,6 +166,7 @@ int main(int argc, char *argv[])
             saddr >> std::hex >> addr;
             accessaddr = bitset<32>(addr);
 
+            // convert from bit sequence to unsigned long value
             long tag1, index1, tag2, index2;
 
             tag1 = bitset<32>(
@@ -190,7 +192,9 @@ int main(int argc, char *argv[])
                     .to_ulong();
 
             bool l1Hits = false, l2Hits = false;
+            
 
+            // Matching in L1
             for (int i = 0; i < setsize1 && !l1Hits; i++)
             {
                 if (L1[i][index1] == tag1 && validBits1[i][index1])
@@ -198,7 +202,8 @@ int main(int argc, char *argv[])
                     l1Hits = true;
                 }
             }
-
+            
+            // Not matched in L1, try to match in L2
             for (int i = 0; i < setsize2 && !l1Hits && !l2Hits; i++)
             {
                 if (L2[i][index2] == tag2 && validBits2[i][index2])
@@ -227,7 +232,7 @@ int main(int argc, char *argv[])
                     /* non inclusive / NINE:
                         copy the data from L2 to L1, update tag in L1
                         1. Even if L1[index] is dirty, discard the evicted data directly
-                        2. L1[index] is not dirty, no more changes */
+                        2. L1[index] is empty, no more changes */
                     int setIdx1 = counter1[index1];
                     L1[setIdx1][index1] = (unsigned long)tag1;
                     validBits1[setIdx1][index1] = true;
