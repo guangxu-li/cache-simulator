@@ -37,15 +37,15 @@ class cache
 {
 private:
     config cfg;
-    unsigned long tag1, index1, offset1, tag2, index2, offset2;
+    unsigned long tag1, index1, tag2, index2;
 
 public:
     cache(config cfg)
     {
         this->cfg = cfg;
 
-        offset1 = (unsigned long)log2(cfg.L1blocksize);
-        offset2 = (unsigned long)log2(cfg.L2blocksize);
+        unsigned long offset1 = (unsigned long)log2(cfg.L1blocksize);
+        unsigned long offset2 = (unsigned long)log2(cfg.L2blocksize);
 
         index1 = (unsigned long)(log2(cfg.L1size) + 10 - log2(cfg.L1setsize) - log2(cfg.L1blocksize));
         index2 = (unsigned long)(log2(cfg.L2size) + 10 - log2(cfg.L2setsize) - log2(cfg.L2blocksize));
@@ -72,7 +72,7 @@ public:
 
     vector<vector<unsigned long> > getL2()
     {
-        return vector<vector<unsigned long> >(cfg.L2setsize, vector<unsigned long>((unsigned long)pow(2, index1), 0));
+        return vector<vector<unsigned long> >(cfg.L2setsize, vector<unsigned long>((unsigned long)pow(2, index2), 0));
     }
 
     vector<vector<bool> > getValidBits1()
@@ -110,6 +110,14 @@ int main(int argc, char *argv[])
     // probably you may define a Cache class for L1 and L2, or any data structure you like
 
     // TODO: full associative
+    if (cacheconfig.L1setsize == 0) {
+        cacheconfig.L1setsize = cacheconfig.L1size * pow(2, 10) / cacheconfig.L1blocksize;
+    }
+
+    if (cacheconfig.L2setsize == 0) {
+        cacheconfig.L2setsize = cacheconfig.L2size * pow(2, 10) / cacheconfig.L2blocksize;
+    }
+
     cache c(cacheconfig);
 
     vector<unsigned long> parameters = c.getParameters();
@@ -123,11 +131,8 @@ int main(int argc, char *argv[])
     int long setsize1 = cacheconfig.L1setsize;
     int long setsize2 = cacheconfig.L2setsize;
 
-    int rows1 = L1[0].size();
-    int rows2 = L2[0].size();
-
-    vector<unsigned long> counter1(rows1, 0);
-    vector<unsigned long> counter2(rows2, 0);
+    vector<unsigned long> counter1(L1[0].size(), 0);
+    vector<unsigned long> counter2(L2[0].size(), 0);
 
     int L1AcceState = 0; // L1 access state variable, can be one of NA, RH, RM, WH, WM;
     int L2AcceState = 0; // L2 access state variable, can be one of NA, RH, RM, WH, WM;
@@ -135,7 +140,7 @@ int main(int argc, char *argv[])
     ifstream traces;
     ofstream tracesout;
     string outname;
-    outname = string(argv[2]) + ".out";
+    outname = string("output.txt");
 
     traces.open(argv[2]);
     tracesout.open(outname.c_str());
@@ -162,11 +167,27 @@ int main(int argc, char *argv[])
 
             long tag1, index1, tag2, index2;
 
-            tag1 = bitset<32>(accessaddr.to_string().substr(0, parameters[0])).to_ulong();
-            index1 = bitset<32>(accessaddr.to_string().substr(parameters[0], parameters[1])).to_ulong();
+            tag1 = bitset<32>(
+                    accessaddr
+                    .to_string<char, std::string::traits_type, std::string::allocator_type>()
+                    .substr(0, parameters[0]))
+                    .to_ulong();
+            index1 = bitset<32>(
+                    accessaddr
+                    .to_string<char, std::string::traits_type, std::string::allocator_type>()
+                    .substr(parameters[0], parameters[1]))
+                    .to_ulong();
 
-            tag2 = bitset<32>(accessaddr.to_string().substr(0, parameters[2])).to_ulong();
-            index2 = bitset<32>(accessaddr.to_string().substr(parameters[2], parameters[3])).to_ulong();
+            tag2 = bitset<32>(
+                    accessaddr
+                    .to_string<char, std::string::traits_type, std::string::allocator_type>()
+                    .substr(0, parameters[2]))
+                    .to_ulong();
+            index2 = bitset<32>(
+                    accessaddr
+                    .to_string<char, std::string::traits_type, std::string::allocator_type>()
+                    .substr(parameters[2], parameters[3]))
+                    .to_ulong();
 
             bool l1Hits = false, l2Hits = false;
 
@@ -203,11 +224,10 @@ int main(int argc, char *argv[])
                     L1AcceState = RM;
                     L2AcceState = RH;
 
-                    /* move the data from L2 to L1, update tag in L1
-                        Non inclusive:
+                    /* non inclusive / NINE:
+                        copy the data from L2 to L1, update tag in L1
                         1. Even if L1[index] is dirty, discard the evicted data directly
                         2. L1[index] is not dirty, no more changes */
-
                     int setIdx1 = counter1[index1];
                     L1[setIdx1][index1] = (unsigned long)tag1;
                     validBits1[setIdx1][index1] = 1;
@@ -219,7 +239,7 @@ int main(int argc, char *argv[])
                     L1AcceState = RM;
                     L2AcceState = RM;
 
-                    // non inclusive, place in both L1 and L2 when both miss
+                    // non inclusive / NINE, place in both L1 and L2 when both miss
                     // place in L2
                     int setIdx2 = counter2[index2];
                     for (int i = 0; i < setsize2 && L2[setIdx2][index2] != 0; i++)
