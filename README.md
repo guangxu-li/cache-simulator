@@ -1,13 +1,14 @@
 # cache-simulator
 Two level cache simulator
 
-# Non Inclusive Policy / NINE policy
+# Exclusive Policy
 
-***The following is some clarification of Non Inclusive Policy or NINE policy. The program is based on these rules.***
+***The following is some clarification of Exclusive policy. The program is based on these rules.***
 - Read
   - (RH, NA) Read Hit in L1: directly return the data and no need to access L2.
-  - (RM, RH) Read Miss in L1 and Read Hit in L2: copy the data in L2 to L1. If there's data in L1 needed to be evicted, discard the evicted data directly.
-  - (RM, RM) Read Miss in L1 and Read Miss in L2: retrieve the data from memory and place it in Both L1 and L2.
+  - (RM, RH) Read Miss in L1 and Read Hit in L2: copy the data in L2 to L1. If there's data in L1
+    needed to be evicted, a write access in L2 by the evicted data defined location is triggered.
+  - (RM, RM) Read Miss in L1 and Read Miss in L2: retrieve the data from memory and place it only in  L1.
 - Write
   - (WH, NA) Write Hit in L1: Nothing.
   - (WM, WH) Write Miss in L1 and Write Hit in L2: L1 forward the write to L2.
