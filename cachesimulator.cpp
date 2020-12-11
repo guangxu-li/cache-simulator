@@ -37,15 +37,15 @@ class cache
 {
 private:
     config cfg;
-    unsigned long tag1, index1, tag2, index2;
+    unsigned long tag1, index1, offset1, tag2, index2, offset2;
 
 public:
     cache(config cfg)
     {
         this->cfg = cfg;
 
-        unsigned long offset1 = (unsigned long)log2(cfg.L1blocksize);
-        unsigned long offset2 = (unsigned long)log2(cfg.L2blocksize);
+        offset1 = (unsigned long)log2(cfg.L1blocksize);
+        offset2 = (unsigned long)log2(cfg.L2blocksize);
 
         index1 = (unsigned long)(log2(cfg.L1size) + 10 - log2(cfg.L1setsize) - log2(cfg.L1blocksize));
         index2 = (unsigned long)(log2(cfg.L2size) + 10 - log2(cfg.L2setsize) - log2(cfg.L2blocksize));
@@ -56,11 +56,13 @@ public:
 
     vector<unsigned long> getParameters()
     {
-        vector<unsigned long> parameters(4, 0);
+        vector<unsigned long> parameters(6, 0);
         parameters[0] = tag1;
         parameters[1] = index1;
-        parameters[2] = tag2;
-        parameters[3] = index2;
+        parameters[2] = offset1;
+        parameters[3] = tag2;
+        parameters[4] = index2;
+        parameters[5] = offset2;
 
         return parameters;
     }
@@ -183,12 +185,12 @@ int main(int argc, char *argv[])
             tag2 = bitset<32>(
                     accessaddr
                     .to_string<char, std::string::traits_type, std::string::allocator_type>()
-                    .substr(0, parameters[2]))
+                    .substr(0, parameters[3]))
                     .to_ulong();
             index2 = bitset<32>(
                     accessaddr
                     .to_string<char, std::string::traits_type, std::string::allocator_type>()
-                    .substr(parameters[2], parameters[3]))
+                    .substr(parameters[3], parameters[4]))
                     .to_ulong();
 
             bool l1Hits = false, l2Hits = false;
@@ -204,12 +206,17 @@ int main(int argc, char *argv[])
             }
             
             // Not matched in L1, try to match in L2
-            for (int i = 0; i < setsize2 && !l1Hits && !l2Hits; i++)
+            int hitIdx2 = 0;
+            while (hitIdx2 < setsize2 && !l1Hits)
             {
-                if (L2[i][index2] == tag2 && validBits2[i][index2])
+                if (L2[hitIdx2][index2] == tag2 && validBits2[hitIdx2][index2])
                 {
                     l2Hits = true;
+
+                    break;
                 }
+
+                hitIdx2++;
             }
 
             // access the L1 and L2 Cache according to the trace;
@@ -229,38 +236,87 @@ int main(int argc, char *argv[])
                     L1AcceState = RM;
                     L2AcceState = RH;
 
-                    /* non inclusive / NINE:
-                        copy the data from L2 to L1, update tag in L1
-                        1. Even if L1[index] is dirty, discard the evicted data directly
+                    /* Exclusive:
+                        move the data from L2 to L1, update tag in L1
+                        1. Originally L1[index] is dirty, move the data to L2
                         2. L1[index] is empty, no more changes */
+
                     int setIdx1 = counter1[index1];
+                    for (int i = 0; i < setsize1 && validBits1[setIdx1][index1]; i++)
+                    {
+                        counter1[index1] = (counter1[index1] + 1) % setsize1;
+                        setIdx1 = counter1[index1];
+                    }
+
                     L1[setIdx1][index1] = (unsigned long)tag1;
+                    bool oriValidBit = validBits1[setIdx1][index1];
                     validBits1[setIdx1][index1] = true;
+                    validBits2[hitIdx2][index2] = false;                    
 
                     counter1[index1] = (counter1[index1] + 1) % setsize1;
+
+                    if (oriValidBit)
+                    {
+                        long oriTag = L1[setIdx1][index1];
+                        // string tag1Str = bitset<32>(oriTag)
+                        //                 .to_string<char, std::string::traits_type, std::string::allocator_type>();
+
+                        // auto headTag = tag1Str.find('1');
+                        // oriAddr += (headTag == std::string::npos ? "" : tag1Str.substr(headTag));
+
+                        // long oriIndex = index1;
+                        // string index1Str = bitset<32>(oriIndex)
+                        //                   .to_string<char, std::string::traits_type, std::string::allocator_type>();
+                                        
+                        // auto headIndex = index1Str.find('1');
+                        // oriAddr += (headIndex == std::string::npos ? "" : index1Str.substr(headIndex));
+
+                        bitset<32> oriAddr((oriTag << (parameters[1] + parameters[2])) + (index1 << parameters[2]));
+                        
+                        long parsedTag = bitset<32>(
+                            oriAddr
+                            .to_string<char, std::string::traits_type, std::string::allocator_type>()
+                            .substr(0, parameters[3]))
+                            .to_ulong();
+
+                        long parsedIndex = bitset<32>(
+                            oriAddr
+                            .to_string<char, std::string::traits_type, std::string::allocator_type>()
+                            .substr(parameters[3], parameters[4]))
+                            .to_ulong();
+
+                        bool hit = false;
+                        for (int i = 0; i < setsize2 && !hit; i++)
+                        {
+                            if (L2[i][parsedIndex] == parsedTag && validBits2[i][parsedIndex]) {
+                                hit = true;
+                            }
+                        }
+
+                        if (!hit)
+                        {
+                            int setIdx2 = counter2[parsedIndex];
+                            for (int i = 0; i < setsize2 && validBits2[setIdx2][parsedIndex]; i++)
+                            {
+                                counter2[parsedIndex] = (counter2[parsedIndex] + 1) % setsize2;
+                                setIdx2 = counter2[parsedIndex];
+                            }
+
+                            L2[setIdx2][parsedIndex] = parsedTag;
+                            validBits2[setIdx2][parsedIndex] = true;
+
+                            counter2[parsedIndex] = (counter2[parsedIndex] + 1) % setsize2;
+                        }
+                    }
                 }
                 else
                 {
                     L1AcceState = RM;
                     L2AcceState = RM;
 
-                    // non inclusive / NINE, place in both L1 and L2 when both miss
-                    // place in L2
-                    int setIdx2 = counter2[index2];
-                    for (int i = 0; i < setsize2 && L2[setIdx2][index2] != -1; i++)
-                    {
-                        counter2[index2] = (counter2[index2] + 1) % setsize2;
-                        setIdx2 = counter2[index2];
-                    }
-
-                    L2[setIdx2][index2] = tag2;
-                    validBits2[setIdx2][index2] = true;
-
-                    counter2[index2] = (counter2[index2] + 1) % setsize2;
-
-                    // place in L1
+                    // Exclusive, place only in L1 when both miss
                     int setIdx1 = counter1[index1];
-                    for (int i = 0; i < setsize1 && L1[setIdx1][index1] != -1; i++)
+                    for (int i = 0; i < setsize1 && validBits1[setIdx1][index1]; i++)
                     {
                         counter1[index1] = (counter1[index1] + 1) % setsize1;
                         setIdx1 = counter1[index1];
