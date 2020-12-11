@@ -241,6 +241,7 @@ int main(int argc, char *argv[])
                         1. Originally L1[index] is dirty, move the data to L2
                         2. L1[index] is empty, no more changes */
 
+                    // place in L1, and invalid in L2
                     int setIdx1 = counter1[index1];
                     for (int i = 0; i < setsize1 && validBits1[setIdx1][index1]; i++)
                     {
@@ -255,24 +256,14 @@ int main(int argc, char *argv[])
 
                     counter1[index1] = (counter1[index1] + 1) % setsize1;
 
+                    // if dirty, propogation
                     if (oriValidBit)
                     {
+                        // parse evicted data block position to addr
                         long oriTag = L1[setIdx1][index1];
-                        // string tag1Str = bitset<32>(oriTag)
-                        //                 .to_string<char, std::string::traits_type, std::string::allocator_type>();
-
-                        // auto headTag = tag1Str.find('1');
-                        // oriAddr += (headTag == std::string::npos ? "" : tag1Str.substr(headTag));
-
-                        // long oriIndex = index1;
-                        // string index1Str = bitset<32>(oriIndex)
-                        //                   .to_string<char, std::string::traits_type, std::string::allocator_type>();
-                                        
-                        // auto headIndex = index1Str.find('1');
-                        // oriAddr += (headIndex == std::string::npos ? "" : index1Str.substr(headIndex));
-
                         bitset<32> oriAddr((oriTag << (parameters[1] + parameters[2])) + (index1 << parameters[2]));
-                        
+
+                        // parse to corresponding L2 tag value and index value 
                         long parsedTag = bitset<32>(
                             oriAddr
                             .to_string<char, std::string::traits_type, std::string::allocator_type>()
@@ -285,6 +276,7 @@ int main(int argc, char *argv[])
                             .substr(parameters[3], parameters[4]))
                             .to_ulong();
 
+                        // try to match
                         bool hit = false;
                         for (int i = 0; i < setsize2 && !hit; i++)
                         {
@@ -293,6 +285,7 @@ int main(int argc, char *argv[])
                             }
                         }
 
+                        // if miss, place in L2
                         if (!hit)
                         {
                             int setIdx2 = counter2[parsedIndex];
