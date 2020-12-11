@@ -249,6 +249,7 @@ int main(int argc, char *argv[])
                         setIdx1 = counter1[index1];
                     }
 
+                    long oriTag = L1[setIdx1][index1];
                     L1[setIdx1][index1] = (unsigned long)tag1;
                     bool oriValidBit = validBits1[setIdx1][index1];
                     validBits1[setIdx1][index1] = true;
@@ -260,7 +261,6 @@ int main(int argc, char *argv[])
                     if (oriValidBit)
                     {
                         // parse evicted data block position to addr
-                        long oriTag = L1[setIdx1][index1];
                         bitset<32> oriAddr((oriTag << (parameters[1] + parameters[2])) + (index1 << parameters[2]));
 
                         // parse to corresponding L2 tag value and index value 
