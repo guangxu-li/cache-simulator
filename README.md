@@ -6,7 +6,7 @@ Two level cache simulator
 ***The following is some clarification of Exclusive policy. The program is based on these rules.***
 - Read
   - (RH, NA) Read Hit in L1: directly return the data and no need to access L2.
-  - (RM, RH) Read Miss in L1 and Read Hit in L2: copy the data in L2 to L1. If there's data in L1
+  - (RM, RH) Read Miss in L1 and Read Hit in L2: move the data in L2 to L1. If there's data in L1
     needed to be evicted, a write access in L2 by the evicted data defined location is triggered.
   - (RM, RM) Read Miss in L1 and Read Miss in L2: retrieve the data from memory and place it only in  L1.
 - Write
